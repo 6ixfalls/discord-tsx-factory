@@ -128,6 +128,10 @@ export default function () {
   wrap(Discord.MessageComponentInteraction.prototype, "editReply", Wrapper);
   wrap(Discord.ModalSubmitInteraction.prototype, "editReply", Wrapper);
 
+  wrap(Discord.CommandInteraction.prototype, "followUp", Wrapper);
+  wrap(Discord.MessageComponentInteraction.prototype, "followUp", Wrapper);
+  wrap(Discord.ModalSubmitInteraction.prototype, "followUp", Wrapper);
+
   wrap(Discord.MessageComponentInteraction.prototype, "update", Wrapper);
 
   wrap(Discord.CommandInteraction.prototype, "showModal", ShowModalWrapper);

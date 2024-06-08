@@ -155,6 +155,7 @@ declare module "discord.js" {
       options: JSX.Element | ElementInteractionEditReplyOptions
     ): Promise<Message<BooleanCache<Cached>>>;
     showModal(modal: JSX.Element): Promise<Message<BooleanCache<Cached>>>;
+    followUp(options: JSX.Element | ElementInteractionReplyOptions): Promise<Message<BooleanCache<Cached>>>;
   }
   interface MessageComponentInteraction<Cached extends CacheType = CacheType> {
     reply(
@@ -167,6 +168,7 @@ declare module "discord.js" {
     update(
       options: ElementInteractionUpdateOptions
     ): Promise<Message<BooleanCache<Cached>>>;
+    followUp(options: JSX.Element | ElementInteractionReplyOptions): Promise<Message<BooleanCache<Cached>>>;
   }
   interface ModalSubmitInteraction<Cached extends CacheType = CacheType> {
     reply(
@@ -175,5 +177,6 @@ declare module "discord.js" {
     editReply(
       options: JSX.Element | ElementInteractionEditReplyOptions
     ): Promise<Message<BooleanCache<Cached>>>;
+    followUp(options: JSX.Element | ElementInteractionReplyOptions): Promise<Message<BooleanCache<Cached>>>;
   }
 }
