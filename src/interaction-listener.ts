@@ -1,49 +1,50 @@
-import type { Interaction } from "discord.js";
 import { InteractionType } from "./enums";
 import { Listenable } from "./mixins";
+import * as Discord from "discord.js";
 
-type ListenerFunction = (interaction: Interaction, remove?: () => void) => void;
-
-function catchInteraction(listener: ListenerFunction, interaction: Interaction, remove?: () => void) {
+type ListenerFunction<T extends InteractionType> = Discord.InteractionTypes[T];
+function catchInteraction<T extends InteractionType>(this: ListenerFunction<T>, ...args: Parameters<ListenerFunction<T>>): void {
   try {
-    listener(interaction, remove);
+    //@ts-expect-error spread args of original function to original function
+    this(...args);
   } catch (e) {
     console.error("Failed to handle interaction: ", e);
+    const interaction = args[0];
     if (interaction.isRepliable()) {
       if (interaction.replied || interaction.deferred) {
-          interaction.followUp({
-              embeds: [
-                  {
-                      title: "Failed to execute",
-                      description:
-                          "Something went wrong while executing this command. Try again later.",
-                  },
-              ],
-              ephemeral: true,
-          });
+        interaction.followUp({
+          embeds: [
+            {
+              title: "Failed to execute",
+              description:
+                "Something went wrong while executing this command. Try again later.",
+            },
+          ],
+          ephemeral: true,
+        });
       } else {
-          interaction.reply({
-              embeds: [
-                  {
-                      title: "Failed to execute",
-                      description:
-                          "Something went wrong while executing this command. Try again later.",
-                  },
-              ],
-              ephemeral: true,
-          });
+        interaction.reply({
+          embeds: [
+            {
+              title: "Failed to execute",
+              description:
+                "Something went wrong while executing this command. Try again later.",
+            },
+          ],
+          ephemeral: true,
+        });
       }
     }
   }
 }
 
-export class Listener implements Listenable {
-  public static readonly listeners = new Map<string, Listener>();
+export class Listener<T extends InteractionType> implements Listenable {
+  public static readonly listeners = new Map<string, Listener<any>>();
   public readonly once?: boolean;
-  public readonly listener: ListenerFunction;
+  public readonly listener: ListenerFunction<T>;
   public readonly type: InteractionType;
-  constructor(listener: ListenerFunction, type: InteractionType, once?: boolean) {
-    this.listener = catchInteraction.bind(null, listener);
+  constructor(listener: ListenerFunction<T>, type: T, once?: boolean) {
+    this.listener = catchInteraction.bind(listener);
     this.type = type;
     this.once = once;
   }

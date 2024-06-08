@@ -10,6 +10,8 @@ import { VirtualDOM } from "./virtual-dom";
 import { FCVirtualDOM, FunctionComponent } from "./function-component";
 import wrapDiscordJS from "./wrapper";
 
+type Writeable<T> = { -readonly [P in keyof T]: T[P] };
+
 export type DiscordFragment = Iterable<DiscordNode>;
 export class Component<P = {}, S extends {} = {}> extends ComponentLike<P, S> {
   private _virtualDOM?: VirtualDOM;
@@ -62,7 +64,7 @@ function ElementBuilder(
               "name" in field &&
               "value" in field
             )
-              props.fields.push(field);
+              (props.fields as Writeable<typeof props.fields>).push(field);
             else props.description += String(child);
           }
         else props.description = String(props.children);
@@ -78,9 +80,9 @@ function ElementBuilder(
     case "footer":
       return typeof props.children === "object"
         ? {
-            ...props,
-            text: props.text || Array.from(props.children).join(""),
-          }
+          ...props,
+          text: props.text || Array.from(props.children).join(""),
+        }
         : { text: props.children };
     case "field":
       return {
@@ -111,7 +113,7 @@ function ElementBuilder(
             : String(props.children)),
       }).setStyle(
         props.style ||
-          (props.url ? Discord.ButtonStyle.Link : Discord.ButtonStyle.Primary)
+        (props.url ? Discord.ButtonStyle.Link : Discord.ButtonStyle.Primary)
       );
       if (props.onClick) {
         assert(

@@ -3,6 +3,7 @@ import * as Discord from "discord.js";
 import { Component, DiscordFragment } from "./index";
 import { PartialOf, ReplaceWith } from "./utils";
 import { HasChildren, HasInternalTag, Listenable } from "./mixins";
+import { InteractionType } from "./enums";
 
 declare global {
   type DiscordNode = JSX.Element;
@@ -32,8 +33,8 @@ declare global {
       field: DiscordNode;
       emoji: never;
       row:
-        | Discord.ButtonBuilder
-        | Discord.BaseSelectMenuBuilder<Discord.APISelectMenuComponent>;
+      | Discord.ButtonBuilder
+      | Discord.BaseSelectMenuBuilder<Discord.APISelectMenuComponent>;
       button: DiscordNode;
       select: Discord.StringSelectMenuOptionBuilder;
       option: DiscordNode;
@@ -66,10 +67,10 @@ declare global {
         channelTypes?: Discord.ChannelType[];
       } & Listenable;
       option: Discord.SelectMenuComponentOptionData;
-      modal: Omit<Discord.ModalData, "type" | "components"> & {
+      modal: Omit<Discord.ModalComponentData, "type" | "components"> & {
         type?:
-          | Discord.ComponentType.ActionRow
-          | Discord.ComponentType.TextInput;
+        | Discord.ComponentType.ActionRow
+        | Discord.ComponentType.TextInput;
         customId: string;
         title: string;
         onSubmit?: Discord.ModalSubmitInteractionHandler;
@@ -86,11 +87,11 @@ declare global {
       row: Discord.ActionRowBuilder;
       button: Discord.ButtonBuilder;
       select:
-        | Discord.StringSelectMenuBuilder
-        | Discord.RoleSelectMenuBuilder
-        | Discord.UserSelectMenuBuilder
-        | Discord.ChannelSelectMenuBuilder
-        | Discord.MentionableSelectMenuBuilder;
+      | Discord.StringSelectMenuBuilder
+      | Discord.RoleSelectMenuBuilder
+      | Discord.UserSelectMenuBuilder
+      | Discord.ChannelSelectMenuBuilder
+      | Discord.MentionableSelectMenuBuilder;
       option: Discord.SelectMenuComponentOptionData;
       modal: Discord.ModalBuilder;
       input: Discord.TextInputBuilder;
@@ -132,6 +133,11 @@ declare module "discord.js" {
     send(
       options: JSX.Element | JSX.IntrinsicProps["message"]
     ): Promise<Message<InGuild>>;
+  }
+  interface InteractionTypes {
+    [InteractionType.Button]: ButtonInteractionHandler;
+    [InteractionType.SelectMenu]: SelectMenuInteractionHandler;
+    [InteractionType.Modal]: ModalSubmitInteractionHandler;
   }
 
   type MessageSubElementKeys = "embeds" | "components";
