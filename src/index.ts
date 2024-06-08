@@ -144,7 +144,9 @@ function ElementBuilder(
       return $;
     }
     case "option":
-      return props; // to be internally wrapped later.
+      return new Discord.StringSelectMenuOptionBuilder({
+        ...props
+      });
     case "modal":
       if (props.onSubmit)
         Listener.listeners.set(

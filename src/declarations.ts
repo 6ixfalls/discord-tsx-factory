@@ -92,7 +92,7 @@ declare global {
       | Discord.UserSelectMenuBuilder
       | Discord.ChannelSelectMenuBuilder
       | Discord.MentionableSelectMenuBuilder;
-      option: Discord.SelectMenuComponentOptionData;
+      option: Discord.StringSelectMenuOptionBuilder;
       modal: Discord.ModalBuilder;
       input: Discord.TextInputBuilder;
     }
