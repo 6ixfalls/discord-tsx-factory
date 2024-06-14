@@ -134,6 +134,11 @@ declare module "discord.js" {
       options: JSX.Element | JSX.IntrinsicProps["message"]
     ): Promise<Message<InGuild>>;
   }
+  interface Message<InGuild extends boolean = boolean> {
+    edit(
+      options: JSX.Element | JSX.IntrinsicProps["message"]
+    ): Promise<Message<InGuild>>;
+  }
   interface InteractionTypes {
     [InteractionType.Button]: ButtonInteractionHandler;
     [InteractionType.SelectMenu]: SelectMenuInteractionHandler;

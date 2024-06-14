@@ -120,6 +120,8 @@ export default function () {
   wrap(Discord.StageChannel.prototype, "send", Wrapper);
   wrap(Discord.VoiceChannel.prototype, "send", Wrapper);
 
+  wrap(Discord.Message.prototype, "edit", Wrapper);
+
   wrap(Discord.CommandInteraction.prototype, "reply", Wrapper);
   wrap(Discord.MessageComponentInteraction.prototype, "reply", Wrapper);
   wrap(Discord.ModalSubmitInteraction.prototype, "reply", Wrapper);
