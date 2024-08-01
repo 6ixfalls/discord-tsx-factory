@@ -56,18 +56,19 @@ function ElementBuilder(
       props.fields = [];
       if (!props.description) {
         props.description = "";
-        if (props.children instanceof Array)
-          for (const child of props.children.flat(Infinity)) {
-            const field = child instanceof Component ? child.render() : child;
-            if (
-              typeof field === "object" &&
-              "name" in field &&
-              "value" in field
-            )
-              (props.fields as Writeable<typeof props.fields>).push(field);
-            else props.description += String(child);
-          }
-        else props.description = String(props.children);
+        if (!props.children instanceof Array) props.description += String(props.children);
+      }
+      if (props.children instanceof Array) {
+        for (const child of props.children.flat(Infinity)) {
+          const field = child instanceof Component ? child.render() : child;
+          if (
+            typeof field === "object" &&
+            "name" in field &&
+            "value" in field
+          )
+            (props.fields as Writeable<typeof props.fields>).push(field);
+          else props.description += String(child);
+        }
       }
       return new Discord.EmbedBuilder({
         ...props,
