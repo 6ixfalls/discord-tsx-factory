@@ -82,7 +82,7 @@ function ElementBuilder(
             "name" in field &&
             "value" in field
           )
-            (props.fields as Writeable<typeof props.fields>).push(field);
+            (props.fields as Writeable<typeof props.fields>).push(field as Discord.APIEmbedField);
           else props.description += String(child);
         }
       }

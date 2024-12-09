@@ -221,6 +221,7 @@ declare module "discord.js" {
     [InteractionType.Button]: ButtonInteractionHandler;
     [InteractionType.SelectMenu]: SelectMenuInteractionHandler;
     [InteractionType.Modal]: ModalSubmitInteractionHandler;
+    [InteractionType.Slash]: CommandInteractionHandler;
   }
 
   type MessageSubElementKeys = "embeds" | "components";
