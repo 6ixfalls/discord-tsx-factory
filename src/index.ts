@@ -3,14 +3,30 @@ import assert, { AssertionError } from "assert";
 
 import "./declarations";
 import { Listener } from "./interaction-listener";
-import { getSelectMenuBuilder } from "./utils";
+import { getSelectMenuBuilder, Writeable } from "./utils";
 import { ComponentLike, HasChildren } from "./mixins";
 import { InteractionType } from "./enums";
 import { VirtualDOM } from "./virtual-dom";
 import { FCVirtualDOM, FunctionComponent } from "./function-component";
 import wrapDiscordJS from "./wrapper";
 
-type Writeable<T> = { -readonly [P in keyof T]: T[P] };
+function setBuilderProperties(builder: any, props: any) {
+  builder.setName(props.name).setDescription(props.description);
+  if (props.name_localizations)
+    builder.setNameLocalizations(props.name_localizations);
+  if (props.description_localizations)
+    builder.setDescriptionLocalizations(props.description_localizations);
+  if (props.required)
+    builder.setRequired(props.required);
+  return builder;
+}
+function addOption(
+  element: Discord.SlashCommandBuilder | Discord.SlashCommandSubcommandBuilder,
+  option: any
+) {
+  element.options.push(option);
+  return element;
+}
 
 export type DiscordFragment = Iterable<DiscordNode>;
 export class Component<P = {}, S extends {} = {}> extends ComponentLike<P, S> {
@@ -56,7 +72,7 @@ function ElementBuilder(
       props.fields = [];
       if (!props.description) {
         props.description = "";
-        if (!props.children instanceof Array) props.description += String(props.children);
+        if (!(props.children instanceof Array)) props.description += String(props.children);
       }
       if (props.children instanceof Array) {
         for (const child of props.children.flat(Infinity)) {
@@ -161,6 +177,112 @@ function ElementBuilder(
       });
     case "input":
       return new Discord.TextInputBuilder({ ...props, type: 4 });
+    case "slash": {
+      if (props.onExecute)
+        Listener.listeners.set(
+          `command_slash_${props.name}`,
+          new Listener(props.onExecute, InteractionType.Slash)
+        );
+      const $ = new Discord.SlashCommandBuilder();
+      setBuilderProperties($, props);
+      if (props.dmPermission !== undefined) $.setDMPermission(props.dmPermission);
+      if (props.defaultMemberPermissions !== undefined)
+        $.setDefaultMemberPermissions(props.defaultMemberPermissions);
+      for (const child of props.children.flat(Infinity))
+        if (child instanceof Discord.SlashCommandBuilder)
+          // slash > slash
+          $.addSubcommand((sub) => {
+            setBuilderProperties(sub, child);
+            const listener = Listener.listeners.get(`command_slash_${child.name}`);
+            if (listener) {
+              Listener.listeners.delete(`command_slash_${child.name}`);
+              Listener.listeners.set(
+                `command_slash_${props.name}_${child.name}`,
+                listener
+              );
+            }
+            for (const option of child.options) addOption(sub, option);
+            return sub;
+          });
+        else if (child instanceof Discord.SlashCommandSubcommandGroupBuilder) {
+          // slash > group > slash
+          for (const option of child.options) {
+            const listener = Listener.listeners.get(
+              `command_slash_${child.name}_${option.name}`
+            );
+            if (listener) {
+              Listener.listeners.delete(
+                `command_slash_${child.name}_${option.name}`
+              );
+              Listener.listeners.set(
+                `command_slash_${props.name}_${child.name}_${option.name}`,
+                listener
+              );
+            }
+          }
+          $.addSubcommandGroup(child);
+        } else addOption($, child);
+      return $;
+    }
+    case "group": {
+      const $ = new Discord.SlashCommandSubcommandGroupBuilder();
+      setBuilderProperties($, props);
+      for (const child of props.children.flat(Infinity))
+        $.addSubcommand((sub) => {
+          setBuilderProperties(sub, child);
+          const listener = Listener.listeners.get(`command_slash_${child.name}`);
+          if (listener) {
+            Listener.listeners.delete(`command_slash_${child.name}`);
+            Listener.listeners.set(
+              `command_slash_${props.name}_${child.name}`,
+              listener
+            );
+          }
+          for (const option of child.options) addOption(sub, option);
+          return sub;
+        });
+      return $;
+    }
+    case "choice":
+      props.value ||= props.children?.join("");
+      return props as Discord.ApplicationCommandOptionChoiceData;
+    case "attachment":
+      return setBuilderProperties(
+        new Discord.SlashCommandAttachmentOption(),
+        props
+      );
+    case "boolean":
+      return setBuilderProperties(
+        new Discord.SlashCommandBooleanOption(),
+        props
+      );
+    case "channel":
+      return setBuilderProperties(
+        new Discord.SlashCommandChannelOption(),
+        props
+      );
+    case "mentionable":
+      return setBuilderProperties(
+        new Discord.SlashCommandMentionableOption(),
+        props
+      );
+    case "role":
+      return setBuilderProperties(new Discord.SlashCommandRoleOption(), props);
+    case "user":
+      return setBuilderProperties(new Discord.SlashCommandUserOption(), props);
+    case "integer":
+    case "number": {
+      props.choices ||= props.children.flat(Infinity);
+      const $ = new Discord.SlashCommandNumberOption();
+      if (props.choices.length) $.setChoices(...props.choices);
+      return setBuilderProperties($, props);
+    }
+    case "string": {
+      props.choices ||= props.children.flat(Infinity);
+      const $ = new Discord.SlashCommandStringOption();
+      if (props.choices.length) $.setChoices(...props.choices);
+      return setBuilderProperties($, props);
+    }
   }
   // returns undefined if 'props' is not resolvable.
 }
@@ -225,6 +347,24 @@ export class Client extends Discord.Client {
         interactionListener.once
       )
         Listener.listeners.delete(interaction.customId);
+    }
+    if (interaction.isCommand()) {
+      const data = interaction.options.data[0];
+      let id = `command_slash_${interaction.commandName}`;
+      function iterateCommandData(sub?: Discord.CommandInteractionOption): void {
+        if (!sub || !sub.options) return;
+        id += `_${sub.name}`;
+        switch (sub.type) {
+          case 1:
+            return;
+          case 2:
+            return iterateCommandData(sub.options[0]);
+        }
+      }
+      iterateCommandData(data);
+      const interactionListener = Listener.listeners.get(id);
+      if (!interactionListener) return;
+      interactionListener.listener(interaction);
     }
   };
   constructor(options: Discord.ClientOptions & { once?: InteractionType[] }) {

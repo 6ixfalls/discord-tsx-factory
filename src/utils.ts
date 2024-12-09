@@ -2,6 +2,7 @@ import * as Discord from "discord.js";
 
 export type PartialOf<T, K extends keyof T> = Partial<Pick<T, K>> & Omit<T, K>;
 export type ReplaceWith<T, K extends keyof T, R> = Omit<T, K> & R;
+export type Writeable<T> = { -readonly [P in keyof T]: T[P] };
 
 export function getSelectMenuBuilder(type?: Discord.SelectType) {
   switch (type) {

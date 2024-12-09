@@ -1,11 +1,26 @@
 import * as Discord from "discord.js";
 
 import { Component, DiscordFragment } from "./index";
-import { PartialOf, ReplaceWith } from "./utils";
+import { PartialOf, ReplaceWith, Writeable } from "./utils";
 import { HasChildren, HasInternalTag, Listenable } from "./mixins";
 import { InteractionType } from "./enums";
 
+type OptionToElementProps<T> = Partial<
+  Pick<
+    T,
+    {
+      [K in keyof T]: T[K] extends Function ? never : K;
+    }[keyof T]
+  >
+> & {
+  name: string;
+  description: string;
+};
+
 declare global {
+  type CommandInteractionHandler = (
+    interaction: Discord.CommandInteraction
+  ) => void;
   type DiscordNode = JSX.Element;
   type StateSetter<S> = (
     state: Partial<S>,
@@ -40,6 +55,29 @@ declare global {
       option: DiscordNode;
       modal: Discord.ActionRowData<Discord.ModalActionRowComponentData>;
       input: never;
+      slash:
+      | Discord.SlashCommandAttachmentOption
+      | Discord.SlashCommandBooleanOption
+      | Discord.SlashCommandChannelOption
+      | Discord.SlashCommandIntegerOption
+      | Discord.SlashCommandMentionableOption
+      | Discord.SlashCommandNumberOption
+      | Discord.SlashCommandRoleOption
+      | Discord.SlashCommandStringOption
+      | Discord.SlashCommandUserOption
+      | Discord.SlashCommandBuilder;
+      group: Discord.SlashCommandBuilder;
+      choice: never;
+
+      attachment: never;
+      boolean: never;
+      channel: never;
+      integer: Discord.ApplicationCommandOptionChoiceData<number>;
+      mentionable: never;
+      number: Discord.ApplicationCommandOptionChoiceData<number>;
+      role: never;
+      string: Discord.ApplicationCommandOptionChoiceData<string>;
+      user: never;
     }
     interface IntrinsicProps {
       message: DiscordNodeReplacer<
@@ -76,6 +114,33 @@ declare global {
         onSubmit?: Discord.ModalSubmitInteractionHandler;
       } & Listenable;
       input: Omit<Discord.TextInputComponentData, "type">;
+      slash: OptionToElementProps<
+        Omit<
+          Discord.SlashCommandBuilder,
+          "dm_permission" | "default_member_permissions"
+        > & {
+          dmPermission: Discord.SlashCommandBuilder["dm_permission"];
+          defaultMemberPermissions: Discord.SlashCommandBuilder["default_member_permissions"];
+        }
+      > & { onExecute?: /*Discord.*/ CommandInteractionHandler };
+      group: OptionToElementProps<Discord.SlashCommandSubcommandGroupBuilder>;
+      choice: Partial<Discord.ApplicationCommandOptionChoiceData> & {
+        name: string;
+        value?: string | number;
+        children?: (string | number)[];
+      };
+
+      attachment: OptionToElementProps<Discord.SlashCommandAttachmentOption>;
+      boolean: OptionToElementProps<Discord.SlashCommandBooleanOption>;
+      channel: OptionToElementProps<Discord.SlashCommandChannelOption>;
+      integer: OptionToElementProps<
+        Writeable<Discord.SlashCommandIntegerOption>
+      >;
+      mentionable: OptionToElementProps<Discord.SlashCommandMentionableOption>;
+      number: OptionToElementProps<Writeable<Discord.SlashCommandNumberOption>>;
+      role: OptionToElementProps<Discord.SlashCommandRoleOption>;
+      string: OptionToElementProps<Writeable<Discord.SlashCommandStringOption>>;
+      user: OptionToElementProps<Discord.SlashCommandUserOption>;
     }
     interface Rendered {
       message: Discord.BaseMessageOptions & HasInternalTag<"message">;
@@ -95,6 +160,19 @@ declare global {
       option: Discord.StringSelectMenuOptionBuilder;
       modal: Discord.ModalBuilder;
       input: Discord.TextInputBuilder;
+      slash: Discord.SlashCommandBuilder;
+      group: Discord.SlashCommandSubcommandGroupBuilder;
+      choice: Discord.ApplicationCommandOptionChoiceData;
+
+      attachment: Discord.SlashCommandAttachmentOption;
+      boolean: Discord.SlashCommandBooleanOption;
+      channel: Discord.SlashCommandChannelOption;
+      integer: Discord.SlashCommandNumberOption;
+      mentionable: Discord.SlashCommandMentionableOption;
+      number: Discord.SlashCommandNumberOption;
+      role: Discord.SlashCommandRoleOption;
+      string: Discord.SlashCommandStringOption;
+      user: Discord.SlashCommandUserOption;
     }
     type IntrinsicElement<T extends IntrinsicKeys> = Partial<
       HasChildren<ChildResolvable[T]>
@@ -190,4 +268,7 @@ declare module "discord.js" {
     ): Promise<Message<BooleanCache<Cached>>>;
     followUp(options: JSX.Element | ElementInteractionReplyOptions): Promise<Message<BooleanCache<Cached>>>;
   }
+  export type CommandInteractionHandler = (
+    interaction: Discord.CommandInteraction
+  ) => void;
 }
